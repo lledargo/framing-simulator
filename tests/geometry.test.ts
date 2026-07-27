@@ -6,6 +6,8 @@ import {
   featureHalfExtent,
   featureNormal,
   featurePlane,
+  groundFacingFeature,
+  oppositeFeature,
   matchOrientationPreset,
   orientationPreset,
   ORIENTATION_PRESETS,
@@ -92,6 +94,44 @@ describe('feature planes', () => {
     expect(plane.normal).toEqual([0, 0, 1]);
     expect(plane.d).toBeCloseTo(30 + 20, 9);
     expect(featureCenter(board, 'face+')).toEqual([10, 20, 50]);
+  });
+});
+
+describe('groundFacingFeature', () => {
+  const plate = boardFromPreset(twoByFour, feet(8), 'plate', {
+    orientation: orientationPreset('plate-x')!.basis,
+  });
+
+  it('turns a click on the top into the surface that rests on the floor', () => {
+    // Clicking the top and then the grid means "put it down", not "bury it".
+    expect(groundFacingFeature(plate, 'face+')).toBe('face-');
+  });
+
+  it('leaves a downward surface alone', () => {
+    expect(groundFacingFeature(plate, 'face-')).toBe('face-');
+  });
+
+  it('refuses a vertical surface, which cannot rest on anything', () => {
+    expect(groundFacingFeature(plate, 'end+')).toBeNull();
+    expect(groundFacingFeature(plate, 'edge+')).toBeNull();
+  });
+
+  it('resolves the resting surface for an upright board too', () => {
+    const stud = boardFromPreset(twoByFour, feet(8), 'stud', {
+      orientation: orientationPreset('stud-face-z')!.basis,
+    });
+    // A stud's length runs vertically, so it stands on its lower end.
+    expect(groundFacingFeature(stud, 'end+')).toBe('end-');
+    expect(groundFacingFeature(stud, 'face+')).toBeNull();
+  });
+});
+
+describe('oppositeFeature', () => {
+  it('flips every surface to its partner', () => {
+    expect(oppositeFeature('face+')).toBe('face-');
+    expect(oppositeFeature('face-')).toBe('face+');
+    expect(oppositeFeature('edge+')).toBe('edge-');
+    expect(oppositeFeature('end-')).toBe('end+');
   });
 });
 

@@ -1,5 +1,5 @@
 import type { Basis, Board, FeatureName, FeatureRef, Vec3 } from './types';
-import { FEATURE_AXIS } from './types';
+import { FEATURE_AXIS, FEATURE_KIND_LABELS, FEATURE_LABELS } from './types';
 
 export const EPSILON = 1e-6;
 
@@ -90,7 +90,7 @@ export const ORIENTATION_PRESETS: readonly OrientationPreset[] = [
   {
     id: 'stud-face-x',
     label: 'Upright, face toward X',
-    hint: 'Stud in a wall running Z',
+    hint: 'Stud or post in a wall running Z',
     basis: [
       [0, 1, 0],
       [0, 0, 1],
@@ -100,21 +100,11 @@ export const ORIENTATION_PRESETS: readonly OrientationPreset[] = [
   {
     id: 'stud-face-z',
     label: 'Upright, face toward Z',
-    hint: 'Stud in a wall running X',
+    hint: 'Stud or post in a wall running X',
     basis: [
       [0, 1, 0],
       [-1, 0, 0],
       [0, 0, 1],
-    ],
-  },
-  {
-    id: 'post',
-    label: 'Upright post',
-    hint: 'Vertical, running Y',
-    basis: [
-      [0, 1, 0],
-      [0, 0, 1],
-      [1, 0, 0],
     ],
   },
 ];
@@ -233,6 +223,55 @@ export function compatibleKind(
   if (alignment > 1 - 1e-4) return 'flush';
   if (alignment < -1 + 1e-4) return 'mate';
   return null;
+}
+
+/**
+ * Name a surface by where it actually points: "Face (up)", "End (left)".
+ *
+ * The alternative — fixed names baked into the six features — reads correctly
+ * for exactly one orientation and misleads for the rest, calling the underside
+ * of a flat plate its "back face". Boards rotated off the world axes fall back
+ * to a direction-free name, since no single word describes where they face.
+ */
+export function describeFeature(board: Board, feature: FeatureName): string {
+  const kind = FEATURE_KIND_LABELS[feature];
+  const normal = featureNormal(board, feature);
+
+  const directions: ReadonlyArray<readonly [Vec3, string]> = [
+    [[0, 1, 0], 'up'],
+    [[0, -1, 0], 'down'],
+    [[1, 0, 0], 'right'],
+    [[-1, 0, 0], 'left'],
+    [[0, 0, 1], 'front'],
+    [[0, 0, -1], 'back'],
+  ];
+
+  for (const [axis, word] of directions) {
+    if (dot(normal, axis) > 1 - 1e-4) return `${kind} (${word})`;
+  }
+  return FEATURE_LABELS[feature];
+}
+
+/** The surface on the other side of the board, along the same axis. */
+export function oppositeFeature(feature: FeatureName): FeatureName {
+  return (feature.endsWith('+') ? feature.replace('+', '-') : feature.replace('-', '+')) as FeatureName;
+}
+
+/**
+ * Pick the surface of a board that should meet the ground.
+ *
+ * Clicking a board's top face and then the grid reads as "put this on the
+ * floor", but taken literally it says "make the top face coincide with y=0",
+ * which buries the board. Since only one of a board's two parallel surfaces can
+ * sensibly rest on the ground, resolve to the one already facing down.
+ *
+ * Returns null when the picked surface is vertical, which genuinely has no
+ * ground relationship and should be reported rather than guessed at.
+ */
+export function groundFacingFeature(board: Board, feature: FeatureName): FeatureName | null {
+  const normal = featureNormal(board, feature);
+  if (Math.abs(normal[1]) < 1 - 1e-4) return null;
+  return normal[1] < 0 ? feature : oppositeFeature(feature);
 }
 
 /** The eight corners of a board, in world space. */

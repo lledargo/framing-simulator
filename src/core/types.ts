@@ -46,13 +46,28 @@ export const FEATURE_AXIS: Record<FeatureName, { axis: 0 | 1 | 2; sign: 1 | -1 }
   'face-': { axis: 2, sign: -1 },
 };
 
+/**
+ * Fallback names, used only when a board is rotated off-axis. Normally the UI
+ * shows where the surface actually points — see `describeFeature` — because a
+ * fixed name like "front face" is wrong the moment the board is laid flat.
+ */
 export const FEATURE_LABELS: Record<FeatureName, string> = {
-  'face+': 'Face (front)',
-  'face-': 'Face (back)',
-  'edge+': 'Edge (top)',
-  'edge-': 'Edge (bottom)',
-  'end+': 'End (far)',
-  'end-': 'End (near)',
+  'face+': 'Wide face',
+  'face-': 'Opposite wide face',
+  'edge+': 'Narrow edge',
+  'edge-': 'Opposite narrow edge',
+  'end+': 'End',
+  'end-': 'Opposite end',
+};
+
+/** The kind of surface, independent of which way it happens to point. */
+export const FEATURE_KIND_LABELS: Record<FeatureName, string> = {
+  'face+': 'Face',
+  'face-': 'Face',
+  'edge+': 'Edge',
+  'edge-': 'Edge',
+  'end+': 'End',
+  'end-': 'End',
 };
 
 /** Cross-section, actual dimensions — a "2x4" stores 38.1 × 88.9. */
@@ -126,7 +141,10 @@ export interface Constraint {
   enabled: boolean;
 }
 
-export type DisplayUnit = 'imperial' | 'metric';
+export type UnitSystem = 'imperial' | 'metric';
+
+/** Alias used where the value is specifically a display preference. */
+export type DisplayUnit = UnitSystem;
 
 export interface ProjectMeta {
   name: string;

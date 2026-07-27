@@ -7,7 +7,9 @@
  * read back fractions rather than 3.7362 inches.
  */
 
-export type UnitSystem = 'imperial' | 'metric';
+import type { UnitSystem } from './types';
+
+export type { UnitSystem };
 
 export const MM_PER_INCH = 25.4;
 export const MM_PER_FOOT = 304.8;

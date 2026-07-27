@@ -1,17 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { boardFromPreset, createConstraint } from '../src/core/board';
-import { orientationPreset } from '../src/core/geometry';
-import { findPreset } from '../src/core/lumber';
 import { resolveBoards, solveModel } from '../src/core/solver';
 import { boardRef, groundRef } from '../src/core/types';
 import type { Board, Constraint } from '../src/core/types';
 import { feet, inches } from '../src/core/units';
+import { requireOrientation, requirePreset } from './helpers';
 
-const twoByFour = findPreset('2x4');
-if (!twoByFour) throw new Error('2x4 preset missing');
-
-const PLATE = orientationPreset('plate-x')!.basis;
-const STUD = orientationPreset('stud-face-z')!.basis;
+const twoByFour = requirePreset('2x4');
+const PLATE = requireOrientation('plate-x');
+const STUD = requireOrientation('stud-face-z');
 
 const y = (board: Board | undefined): number => board?.position[1] ?? Number.NaN;
 const x = (board: Board | undefined): number => board?.position[0] ?? Number.NaN;
